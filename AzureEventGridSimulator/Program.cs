@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Net;
+using System.Runtime.InteropServices;
 using System.Security.Cryptography.X509Certificates;
 using AzureEventGridSimulator.Extensions;
 using AzureEventGridSimulator.Settings;
@@ -39,31 +40,26 @@ namespace AzureEventGridSimulator
                                       foreach (var topics in simulatorSettings.Topics)
                                       {
                                           options.Listen(IPAddress.Loopback, topics.Port,
-                                                         listenOptions => { listenOptions.UseHttps(StoreName.My, "localhost", true); });
+                                                         listenOptions =>
+                                                         {
+                                                             if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+                                                             {
+                                                                 listenOptions.UseHttps(new X509Certificate2(@"cert.pfx", "password"));
+                                                             }
+                                                             else
+                                                             {
+                                                                 listenOptions.UseHttps(StoreName.My, "localhost", true);
+                                                             }
+                                                         });
                                       }
                                   })
                                   .Build();
-
-                var logger = (ILogger)host.Services.GetService(typeof(ILogger));
-                logger.LogInformation("Started");
-
-                try
-                {
-                    host.Run();
-                }
-                catch (Exception ex)
-                {
-                    logger.LogError("Failed to run the Azure Event Grid Simulator: {ErrorMessage}.", ex.Message);
-                }
+                host.Run();
             }
             catch (Exception ex)
             {
                 Console.WriteLine($"Error: {ex.Message}");
             }
-
-            Console.WriteLine("");
-            Console.WriteLine("Any key to exit...");
-            Console.ReadKey();
         }
     }
 }

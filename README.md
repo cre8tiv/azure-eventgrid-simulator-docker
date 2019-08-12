@@ -27,6 +27,7 @@ An example of one topic with one subscriber is shown below.
   ]
 }
 ```
+The Docker.web file exposes the same ports (60101 and 60102) shown in the appsettings.json file.  The Vagrantfile maps those ports to 10101 and 10102 respectively.  Adding additional topics and unique ports will require modifying the Docker.web file and Vagranfile if desired.
 
 ### Filtering Events
 Event filtering is configurable using the filter model defined here: https://docs.microsoft.com/en-us/azure/event-grid/event-filtering. This page provides a full guide to the configuration options available and all parts of this guide are currently supported. For ease of transition, explicit limitations have also been adhered to.

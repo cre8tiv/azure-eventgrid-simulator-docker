@@ -1,0 +1,9 @@
+FROM nginx
+
+COPY nginx.conf /etc/nginx/nginx.conf
+COPY localhost.conf /etc/nginx/localhost.conf
+
+# Use opnssl to generate a certificate
+RUN apt-get update \
+    && apt-get install openssl
+RUN openssl req -x509 -newkey rsa:4096 -keyout localhost.key -out localhost.crt -days 3650 -nodes -subj "/CN=localhost" -config localhost.conf

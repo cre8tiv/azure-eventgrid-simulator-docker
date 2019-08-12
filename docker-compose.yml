@@ -1,0 +1,29 @@
+version: "2.1"
+services:
+    eventgrid:
+        container_name: eventgrid
+        build:
+            context: "./"
+            dockerfile: ./docker/Dockerfile.web
+        environment:
+            - ASPNETCORE_ENVIRONMENT=Development
+        ports:
+            - "60101:60101"
+            - "60102:60102"
+        healthcheck:
+            test: 'exit 0'            
+    nginx:
+        container_name: nginx
+        depends_on:
+            - eventgrid
+        build:
+            args:
+                environment: dev 
+            context: "./"
+            dockerfile: ./docker/Dockerfile.nginx
+        ports:
+            - "80:80"
+            - "81:81"      
+        healthcheck:
+            test: 'exit 0'                    
+            

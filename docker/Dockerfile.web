@@ -1,0 +1,34 @@
+FROM microsoft/dotnet:2.2-sdk AS build-env
+
+WORKDIR /app
+
+COPY ["/AzureEventGridSimulator/AzureEventGridSimulator.csproj", "./AzureEventGridSimulator/"]
+RUN dotnet restore "./AzureEventGridSimulator/"
+
+# Copy everything else and build
+COPY ./AzureEventGridSimulator/ ./AzureEventGridSimulator/
+
+# disable manifest because it is causing deployment issues
+RUN dotnet publish ./AzureEventGridSimulator/ -c Release -o ../out /property:PublishWithAspNetCoreTargetManifest=false
+
+# Build runtime image
+FROM microsoft/dotnet:2.2-aspnetcore-runtime
+
+WORKDIR /app
+COPY --from=build-env /app/out .
+
+# Set password for the certificate
+ENV certPassword password
+
+# Use opnssl to generate a self signed certificate cert.pfx with password $env:certPassword
+RUN apt update && apt install openssl
+RUN openssl genrsa -des3 -passout pass:${certPassword} -out server.key 2048
+RUN openssl rsa -passin pass:${certPassword} -in server.key -out server.key
+RUN openssl req -sha256 -new -key server.key -out server.csr -subj '/CN=localhost'
+RUN openssl x509 -req -sha256 -days 365 -in server.csr -signkey server.key -out server.crt
+RUN openssl pkcs12 -export -out cert.pfx -inkey server.key -in server.crt -certfile server.crt -passout pass:${certPassword}
+
+EXPOSE 60101
+EXPOSE 60102
+
+ENTRYPOINT ["dotnet", "AzureEventGridSimulator.dll"]
